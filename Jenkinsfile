@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         IMAGE_NAME = 'terraform-automation:latest'  // Use your custom image name
-        AWS_ACCESS_KEY_ID     = credentials('access-key')      // Secret Text ID in Jenkins
-        AWS_SECRET_ACCESS_KEY = credentials('secret-key')  // Secret Text ID in Jenkins
+        AWS_ACCESS_KEY_ID     = credentials('access_key')      // Secret Text ID in Jenkins
+        AWS_SECRET_ACCESS_KEY = credentials('secret_key')  // Secret Text ID in Jenkins
     }
 
     stages {
