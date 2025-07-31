@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    tools {
+      terraform 'terraform-1.7.1'  // Matches the name in Global Tool Config
+    }
 
     environment {
         IMAGE_NAME = 'terraform-automation:latest'
