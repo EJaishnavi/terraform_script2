@@ -8,13 +8,7 @@ pipeline {
     }
 
     stages {
-        stage('Checkout Code') {
-            steps {
-                git 'https://github.com/EJaishnavi/terraform-script1.git'
-            }
-        }
-
-        stage('Build Docker Image') {
+       stage('Build Docker Image') {
             steps {
                 script {
                     sh "docker build -t ${DOCKER_IMAGE} ."
