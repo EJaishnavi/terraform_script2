@@ -2,89 +2,44 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'terraform-automation:latest'  // Use your custom image name
-        AWS_ACCESS_KEY_ID     = credentials('access_key')      // Secret Text ID in Jenkins
-        AWS_SECRET_ACCESS_KEY = credentials('secret_key')  // Secret Text ID in Jenkins
+        IMAGE_NAME = 'terraform-automation:latest'
+        DOCKER_IMAGE = 'jaishnavi08/terraform-automation:latest'
+       
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/EJaishnavi/terraform-script1.git'  // Replace with your repo
+                git 'https://github.com/EJaishnavi/terraform-script1.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh "docker build -t ${IMAGE_NAME} ."
+                    sh "docker build -t ${DOCKER_IMAGE} ."
                 }
             }
         }
 
-        stage('Run Terraform in Docker') {
+        stage('Push Docker Image') {
             steps {
-                script {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh """
-                        docker run --rm \
-                        -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
-                        -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
-                        -v \$(pwd):/app -w /app \
-                        ${IMAGE_NAME}
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push ${DOCKER_IMAGE}
+                        docker logout
                     """
                 }
             }
         }
+
+        
     }
 
     post {
         always {
             echo 'Pipeline execution complete.'
-        }
-    }
-}
-pipeline {
-    agent any
-
-    environment {
-        IMAGE_NAME = 'terraform-deployer:latest'
-        AWS_ACCESS_KEY_ID     = credentials('aws-access-key-id')      // Jenkins credentials ID
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')  // Jenkins credentials ID
-    }
-
-    stages {
-        stage('Checkout Code') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    docker.build("${IMAGE_NAME}")
-                }
-            }
-        }
-
-        stage('Run Terraform Apply in Container') {
-            steps {
-                script {
-                    docker.image("${IMAGE_NAME}").inside("-e AWS_ACCESS_KEY_ID=${env.AWS_ACCESS_KEY_ID} -e AWS_SECRET_ACCESS_KEY=${env.AWS_SECRET_ACCESS_KEY}") {
-                        sh 'chmod +x entrypoint.sh'
-                        sh './entrypoint.sh'
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        failure {
-            echo 'Terraform apply failed!'
-        }
-        success {
-            echo 'Terraform apply completed successfully.'
         }
     }
 }
