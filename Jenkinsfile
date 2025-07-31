@@ -4,7 +4,8 @@ pipeline {
     environment {
         IMAGE_NAME = 'terraform-automation:latest'
         DOCKER_IMAGE = 'jaishnavi08/terraform-automation:latest'
-       
+        AWS_ACCESS_KEY_ID     = credentials('access_key')      // Jenkins credential
+        AWS_SECRET_ACCESS_KEY = credentials('secret_key')
     }
 
     stages {
@@ -27,6 +28,20 @@ pipeline {
                 }
             }
         }
+  stage('Run Terraform in Docker') {
+    steps {
+        script {
+            sh """
+                docker pull ${DOCKER_IMAGE}
+                docker run --rm \
+                    -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
+                    -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+                    -v \$(pwd):/app -w /app \
+                    ${DOCKER_IMAGE}
+            """
+        }
+    }
+}
 
         
     }
