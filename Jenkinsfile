@@ -43,3 +43,48 @@ pipeline {
         }
     }
 }
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = 'terraform-deployer:latest'
+        AWS_ACCESS_KEY_ID     = credentials('aws-access-key-id')      // Jenkins credentials ID
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')  // Jenkins credentials ID
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build("${IMAGE_NAME}")
+                }
+            }
+        }
+
+        stage('Run Terraform Apply in Container') {
+            steps {
+                script {
+                    docker.image("${IMAGE_NAME}").inside("-e AWS_ACCESS_KEY_ID=${env.AWS_ACCESS_KEY_ID} -e AWS_SECRET_ACCESS_KEY=${env.AWS_SECRET_ACCESS_KEY}") {
+                        sh 'chmod +x entrypoint.sh'
+                        sh './entrypoint.sh'
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            echo 'Terraform apply failed!'
+        }
+        success {
+            echo 'Terraform apply completed successfully.'
+        }
+    }
+}
